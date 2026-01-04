@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>我的刷机小主页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: #fff;
+            overflow-x: hidden;
+        }
+        /* 顶部导航栏（手机适配） */
+        .nav {
+            background-color: #4CAF50;
+            padding: 12px 15px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 999;
+        }
+        .nav h1 {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+        }
+        /* 页面容器：核心动画与布局 */
+        .page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding-top: 55px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: translateY(30px);
+            overflow-y: auto;
+            z-index: 10;
+            /* 子页面背景图+蒙版 */
+            background: url("https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80") no-repeat center center/cover;
+        }
+        .page::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85); /* 白色蒙版，透明度可调 */
+            z-index: -1;
+        }
+        /* 首页单独背景（无蒙版） */
+        #index {
+            background: url("https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80") no-repeat center center/cover;
+        }
+        #index::after {
+            display: none;
+        }
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        /* 首页样式（手机适配） */
+        .banner {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .banner-text {
+            color: white;
+            text-align: center;
+            background: rgba(0,0,0,0.6);
+            padding: 20px 25px;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1s ease 0.3s, transform 1s ease 0.3s;
+            width: 100%;
+            max-width: 400px;
+        }
+        .banner-text.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .banner-text h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            white-space: nowrap; /* 强制单行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .banner-text p {
+            font-size: 16px;
+            white-space: nowrap; /* 强制单行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* 板块容器（手机响应式） */
+        .section {
+            padding: 30px 15px;
+            max-width: 100%;
+        }
+        .section h3 {
+            font-size: 24px;
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .block-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 手机双列布局 */
+            gap: 15px;
+        }
+        .block {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .block:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+        .block h4 {
+            font-size: 16px;
+            color: #2E7D32;
+            margin-bottom: 8px;
+        }
+        .block p {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+        /* 详情内容（手机适配） */
+        .detail-content {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            color: #333;
+            margin: 0 auto 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .detail-content h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #2E7D32;
+        }
+        .detail-content p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .detail-content a {
+            display: block;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .detail-content a:hover {
+            background-color: #2E7D32;
+        }
+        /* 返回按钮（手机适配） */
+        .back-btn {
+            display: block;
+            width: 100px;
+            height: 36px;
+            line-height: 36px;
+            background: #4CAF50;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            margin: 20px auto;
+            cursor: pointer;
+            font-size: 14px;
+            background: rgba(76, 175, 80, 0.9);
+        }
+        /* 适配小屏手机 */
+        @media (max-width: 375px) {
+            .block-container {
+                grid-template-columns: 1fr; /* 超小屏单列 */
+            }
+            .banner-text h2 {
+                font-size: 24px;
+            }
+            .banner-text p {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <h1>我的刷机小主页</h1>
+    </div>
+
+    <!-- 首页（一级页面）：刷机相关+我的设备+资源分享 -->
+    <div id="index" class="page active">
+        <div class="banner">
+            <div class="banner-text" id="bannerMainText">
+                <h2>你好呀！欢迎来访</h2>
+                <p>一名痴迷刷机的初一学生</p>
+            </div>
+        </div>
+        <div class="section" style="margin-top: -20px;">
+            <h3>我的刷机世界</h3>
+            <div class="block-container">
+                <!-- 板块1：我的设备 -->
+                <div class="block" onclick="switchPage('level2-1')">
+                    <h4>我的设备</h4>
+                    <p>红米Turbo4/Note8 Pro</p>
+                </div>
+                <!-- 板块2：Note8 Pro刷机 -->
+                <div class="block" onclick="switchPage('level2-2')">
+                    <h4>Note8 Pro刷机</h4>
+                    <p>详细刷机教程</p>
+                </div>
+                <!-- 板块3：救砖教程 -->
+                <div class="block" onclick="switchPage('level2-3')">
+                    <h4>救砖教程</h4>
+                    <p>Note8 Pro变砖恢复</p>
+                </div>
+                <!-- 板块4：ROOT教程 -->
+                <div class="block" onclick="switchPage('level2-4')">
+                    <h4>ROOT教程</h4>
+                    <p>Note8 Pro获取ROOT</p>
+                </div>
+                <!-- 板块5：Recovery -->
+                <div class="block" onclick="switchPage('level2-5')">
+                    <h4>Recovery</h4>
+                    <p>刷入第三方Recovery</p>
+                </div>
+                <!-- 板块6：Magisk模块 -->
+                <div class="block" onclick="switchPage('level2-6')">
+                    <h4>Magisk模块</h4>
+                    <p>实用模块推荐</p>
+                </div>
+                <!-- 板块7：系统精简 -->
+                <div class="block" onclick="switchPage('level2-7')">
+                    <h4>系统精简</h4>
+                    <p>Note8 Pro系统瘦身</p>
+                </div>
+                <!-- 板块8：第三方ROM -->
+                <div class="block" onclick="switchPage('level2-8')">
+                    <h4>第三方ROM</h4>
+                    <p>适配ROM推荐与刷入</p>
+                </div>
+                <!-- 板块9：资源分享 -->
+                <div class="block" onclick="switchPage('level2-9')">
+                    <h4>资源分享</h4>
+                    <p>刷机资源下载站</p>
+                </div>
+                <!-- 新增板块10：联系方式 -->
+                <div class="block" onclick="switchPage('level2-10')">
+                    <h4>联系方式</h4>
+                    <p>微信/QQ交流</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 二级页面1：我的设备 -->
+    <div id="level2-1" class="page">
+        <div class="section">
+            <h3>我的设备清单</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-1-1')">
+                    <h4>红米Turbo 4</h4>
+                    <p>主力机（不可刷机）</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-1-2')">
+                    <h4>红米Note 8 Pro</h4>
+                    <p>刷机备用机（可刷机）</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面1-1：红米Turbo 4 -->
+    <div id="level3-1-1" class="page">
+        <div class="section">
+            <h3>红米Turbo 4（不可刷机）</h3>
+            <div class="detail-content">
+                <h4>设备说明</h4>
+                <p>红米Turbo 4是我的日常主力机，这款机型目前官方未开放BootLoader解锁权限，且第三方也没有适配的解锁工具，因此暂时无法进行刷机、ROOT等操作，只能使用官方原版系统。</p>
+                <h4>使用体验</h4>
+                <p>虽然不能刷机，但原版MIUI系统流畅度不错，电池续航也能满足日常上学使用，平时主要用它来学习、社交和玩轻度游戏。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面1-2：红米Note 8 Pro -->
+    <div id="level3-1-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro（可刷机）</h3>
+            <div class="detail-content">
+                <h4>设备概况</h4>
+                <p>红米Note 8 Pro是我的刷机专用备用机，搭载联发科G90T处理器，官方已开放BootLoader解锁权限，第三方Recovery和ROM资源也比较丰富，非常适合用来练手刷机。</p>
+                <h4>刷机优势</h4>
+                <p>1. 解锁流程简单，小米官网可直接申请解锁；<br>
+                2. 第三方ROM选择多，如LineageOS、MIUI开发版、Pixel Experience等；<br>
+                3. 硬件配置足够，刷入各类系统后运行流畅。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面2：Note8 Pro刷机 -->
+    <div id="level2-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro刷机教程</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-2-1')">
+                    <h4>解锁BL</h4>
+                    <p>解锁BootLoader步骤</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-2-2')">
+                    <h4>刷官方开发版</h4>
+                    <p>MIUI开发版刷入</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面2-1：解锁BL -->
+    <div id="level3-2-1" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro解锁BL</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level4-2-1-1')">
+                    <h4>申请解锁</h4>
+                    <p>小米官网解锁申请</p>
+                </div>
+                <div class="block" onclick="switchPage('level4-2-1-2')">
+                    <h4>工具解锁</h4>
+                    <p>小米解锁工具操作</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-2')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面2-1-1：小米官网解锁申请 -->
+    <div id="level4-2-1-1" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro解锁申请</h3>
+            <div class="detail-content">
+                <h4>申请步骤</h4>
+                <p>1. 打开小米解锁官网（https://www.miui.com/unlock/），登录绑定手机的小米账号；<br>
+                2. 点击“解锁申请”，填写手机型号（红米Note 8 Pro）、IMEI码、手机号等信息；<br>
+                3. 提交申请后，等待官方审核，通常1-3天即可通过（小米账号需登录手机7天以上）；<br>
+                4. 审核通过后，即可下载小米解锁工具进行下一步操作。</p>
+                <h4>注意事项</h4>
+                <p>申请时需确保手机与小米账号绑定，且账号在手机上连续登录满7天，否则审核会失败。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-2-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面2-1-2：小米解锁工具操作 -->
+    <div id="level4-2-1-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro工具解锁</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 下载并安装小米解锁工具，打开后登录审核通过的小米账号；<br>
+                2. 手机进入开发者模式，开启“OEM解锁”和“USB调试”，然后关机；<br>
+                3. 按住电源键+音量下键进入fastboot模式，用数据线连接电脑；<br>
+                4. 点击解锁工具中的“解锁”按钮，等待进度条完成（约1分钟），解锁成功后手机会自动重启。</p>
+                <h4>重要提醒</h4>
+                <p>解锁会清除手机所有数据，操作前务必备份照片、文件等重要内容；解锁后手机将失去官方保修。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-2-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面2-2：刷官方开发版 -->
+    <div id="level3-2-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro刷MIUI开发版</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level4-2-2-1')">
+                    <h4>下载固件</h4>
+                    <p>开发版固件下载</p>
+                </div>
+                <div class="block" onclick="switchPage('level4-2-2-2')">
+                    <h4>MiFlash刷机</h4>
+                    <p>刷机工具操作</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-2')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面2-2-1：开发版固件下载 -->
+    <div id="level4-2-2-1" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro开发版固件下载</h3>
+            <div class="detail-content">
+                <h4>下载步骤</h4>
+                <p>1. 打开小米ROM官网（https://rom.miui.com/），选择“红米Note 8 Pro”机型；<br>
+                2. 切换到“开发版”标签，查看最新的开发版固件版本，点击“下载”；<br>
+                3. 固件为zip压缩包，下载完成后无需解压，记住保存路径（后续刷机工具需要用到）。</p>
+                <h4>版本选择</h4>
+                <p>建议选择最新的稳定开发版，避免选择测试版，防止出现系统bug影响使用。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-2-2')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面2-2-2：MiFlash刷机 -->
+    <div id="level4-2-2-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro MiFlash刷机</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 下载并安装MiFlash刷机工具，安装时需勾选安装驱动（确保手机能被电脑识别）；<br>
+                2. 手机进入fastboot模式，连接电脑，打开MiFlash工具，点击“加载设备”识别手机；<br>
+                3. 点击“选择”，找到下载好的MIUI开发版固件文件夹；<br>
+                4. 选择“清除所有数据”模式，点击“刷机”，等待进度完成（约5分钟），刷机成功后手机会自动重启。</p>
+                <h4>常见问题</h4>
+                <p>若刷机时提示“设备未识别”，需重新安装小米驱动，或更换数据线/电脑USB接口；刷机后卡在开机界面，可重新进入fastboot模式再次刷机。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-2-2')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面3：救砖教程（Note8 Pro） -->
+    <div id="level2-3" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro救砖教程</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-3-1')">
+                    <h4>线刷救砖</h4>
+                    <p>官方线刷恢复系统</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-3-2')">
+                    <h4>卡刷救砖</h4>
+                    <p>Recovery卡刷恢复</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面3-1：线刷救砖 -->
+    <div id="level3-3-1" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro线刷救砖</h3>
+            <div class="detail-content">
+                <h4>适用场景</h4>
+                <p>手机变砖后无法开机、无法进入Recovery，仅能进入fastboot模式时使用。</p>
+                <h4>操作步骤</h4>
+                <p>1. 下载红米Note 8 Pro官方稳定版固件和MiFlash工具；<br>
+                2. 手机进入fastboot模式，连接电脑，打开MiFlash工具加载官方固件；<br>
+                3. 选择“清除所有数据”，点击“刷机”；<br>
+                4. 刷机完成后手机自动重启，即可恢复官方系统，完成救砖。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-3')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面3-2：卡刷救砖 -->
+    <div id="level3-3-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro卡刷救砖</h3>
+            <div class="detail-content">
+                <h4>适用场景</h4>
+                <p>手机能进入Recovery模式，但无法正常开机时使用。</p>
+                <h4>操作步骤</h4>
+                <p>1. 下载红米Note 8 Pro官方卡刷包，放入手机SD卡根目录；<br>
+                2. 手机关机，按住电源键+音量上键进入官方Recovery；<br>
+                3. 选择“安装更新包”，找到SD卡中的卡刷包，确认刷入；<br>
+                4. 刷入完成后，选择“重启手机”，即可恢复系统。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-3')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面4：ROOT教程 -->
+    <div id="level2-4" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro ROOT教程</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-4-1')">
+                    <h4>Magisk ROOT</h4>
+                    <p>最稳定的ROOT方式</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-4-2')">
+                    <h4>ROOT验证</h4>
+                    <p>确认ROOT是否成功</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面4-1：Magisk ROOT -->
+    <div id="level3-4-1" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro Magisk ROOT</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level4-4-1-1')">
+                    <h4>准备工作</h4>
+                    <p>固件提取与Magisk下载</p>
+                </div>
+                <div class="block" onclick="switchPage('level4-4-1-2')">
+                    <h4>刷入操作</h4>
+                    <p>Recovery刷入Magisk</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-4')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面4-1-1：准备工作 -->
+    <div id="level4-4-1-1" class="page">
+        <div class="section">
+            <h3>ROOT准备工作</h3>
+            <div class="detail-content">
+                <h4>步骤1：提取boot.img</h4>
+                <p>1. 下载与手机当前系统版本一致的MIUI固件包；<br>
+                2. 用解压软件打开固件包，提取里面的boot.img文件；<br>
+                3. 将boot.img复制到手机存储空间中。</p>
+                <h4>步骤2：下载Magisk</h4>
+                <p>1. 打开Magisk官网下载最新版Magisk APK安装包；<br>
+                2. 在手机上安装Magisk APK，打开后点击“选择并修补一个文件”；<br>
+                3. 选择刚才复制的boot.img，点击“修补”，等待生成修补后的magisk_patched.img文件。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-4-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 四级页面4-1-2：刷入操作 -->
+    <div id="level4-4-1-2" class="page">
+        <div class="section">
+            <h3>刷入Magisk获取ROOT</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 将修补后的magisk_patched.img文件复制到电脑；<br>
+                2. 手机进入fastboot模式，连接电脑；<br>
+                3. 在电脑命令提示符中输入：fastboot flash boot magisk_patched.img；<br>
+                4. 输入：fastboot reboot 重启手机，打开Magisk APP，即可完成ROOT。</p>
+                <h4>注意事项</h4>
+                <p>刷入前需确保手机已解锁BL且安装了第三方Recovery，否则会刷入失败。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level3-4-1')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面4-2：ROOT验证 -->
+    <div id="level3-4-2" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro ROOT验证</h3>
+            <div class="detail-content">
+                <h4>验证方法1：Magisk APP</h4>
+                <p>打开手机上的Magisk APP，如果显示“安装状态：已安装”，且版本号正常，说明ROOT成功。</p>
+                <h4>验证方法2：ROOT检测工具</h4>
+                <p>下载安装“Root Checker”APP，打开后点击“验证ROOT权限”，如果提示“设备已获得ROOT权限”，则ROOT成功。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-4')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面5：Recovery -->
+    <div id="level2-5" class="page">
+        <div class="section">
+            <h3>刷入第三方Recovery</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-5-1')">
+                    <h4>下载TWRP</h4>
+                    <p>适配Note8 Pro的TWRP</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-5-2')">
+                    <h4>刷入TWRP</h4>
+                    <p>fastboot命令刷入</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面5-1：下载TWRP -->
+    <div id="level3-5-1" class="page">
+        <div class="section">
+            <h3>下载适配的TWRP Recovery</h3>
+            <div class="detail-content">
+                <h4>下载步骤</h4>
+                <p>1. 打开TWRP官网或第三方安卓刷机论坛；<br>
+                2. 搜索“红米Note 8 Pro TWRP”，选择最新版本的TWRP镜像文件（格式为.img）；<br>
+                3. 将下载好的twrp.img文件复制到电脑，记住保存路径。</p>
+                <h4>版本选择</h4>
+                <p>选择标注“支持红米Note 8 Pro”且发布时间较新的版本，避免老旧版本出现兼容性问题。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-5')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面5-2：刷入TWRP -->
+    <div id="level3-5-2" class="page">
+        <div class="section">
+            <h3>刷入TWRP Recovery</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 手机进入fastboot模式，连接电脑；<br>
+                2. 在电脑命令提示符中输入：fastboot flash recovery twrp.img（需替换为你的TWRP文件名）；<br>
+                3. 输入：fastboot reboot recovery，手机会重启进入TWRP界面；<br>
+                4. 首次进入TWRP会提示是否允许修改系统，选择“保留只读”即可。</p>
+                <h4>验证方法</h4>
+                <p>重启进入Recovery后，若显示TWRP的操作界面，说明刷入成功。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-5')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面6：Magisk模块 -->
+    <div id="level2-6" class="page">
+        <div class="section">
+            <h3>实用Magisk模块推荐</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-6-1')">
+                    <h4>系统优化模块</h4>
+                    <p>提升流畅度与续航</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-6-2')">
+                    <h4>功能扩展模块</h4>
+                    <p>解锁隐藏功能</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面6-1：系统优化模块 -->
+    <div id="level3-6-1" class="page">
+        <div class="section">
+            <h3>系统优化类Magisk模块</h3>
+            <div class="detail-content">
+                <h4>1. Universal GMS Doze</h4>
+                <p>优化谷歌服务耗电，大幅提升手机续航时间，适合刷入类原生ROM的用户。</p>
+                <h4>2. SQLite Optimizer</h4>
+                <p>自动优化系统数据库，提升手机流畅度，解决长期使用后的卡顿问题。</p>
+                <h4>3. Battery Saver Extreme</h4>
+                <p>深度优化电池管理，限制后台应用自启动，延长红米Note 8 Pro的续航。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-6')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面6-2：功能扩展模块 -->
+    <div id="level3-6-2" class="page">
+        <div class="section">
+            <h3>功能扩展类Magisk模块</h3>
+            <div class="detail-content">
+                <h4>1. ViPER4Android FX</h4>
+                <p>强大的音效增强模块，支持自定义音效，让红米Note 8 Pro的外放和耳机音质大幅提升。</p>
+                <h4>2. GravityBox</h4>
+                <p>解锁安卓系统隐藏功能，支持自定义状态栏、导航栏、手势操作等。</p>
+                <h4>3. YouTube Vanced</h4>
+                <p>去除YouTube广告，支持后台播放，适合喜欢看油管视频的用户。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-6')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面7：系统精简 -->
+    <div id="level2-7" class="page">
+        <div class="section">
+            <h3>红米Note 8 Pro系统精简</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-7-1')">
+                    <h4>预装APP卸载</h4>
+                    <p>删除无用系统软件</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-7-2')">
+                    <h4>系统服务禁用</h4>
+                    <p>关闭后台冗余服务</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面7-1：预装APP卸载 -->
+    <div id="level3-7-1" class="page">
+        <div class="section">
+            <h3>卸载预装APP</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 手机获取ROOT权限后，安装“系统程序卸载器”APP；<br>
+                2. 打开APP，授予ROOT权限，会列出所有系统预装APP；<br>
+                3. 选择无用的APP（如小米视频、小米音乐、游戏中心等），点击“卸载”；<br>
+                4. 卸载完成后重启手机，系统会更流畅。</p>
+                <h4>注意事项</h4>
+                <p>不要卸载核心系统APP（如设置、拨号、短信等），否则会导致手机变砖。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-7')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面7-2：系统服务禁用 -->
+    <div id="level3-7-2" class="page">
+        <div class="section">
+            <h3>禁用冗余系统服务</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 安装“Servicely”APP，授予ROOT权限；<br>
+                2. 打开APP，会显示所有正在运行的系统服务；<br>
+                3. 禁用无用服务（如谷歌位置服务、自动同步服务、广告推送服务等）；<br>
+                4. 禁用后重启手机，可减少后台耗电和内存占用。</p>
+                <h4>注意事项</h4>
+                <p>禁用服务前需确认服务功能，避免禁用关键服务导致系统异常。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-7')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面8：第三方ROM -->
+    <div id="level2-8" class="page">
+        <div class="section">
+            <h3>第三方ROM推荐与刷入</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-8-1')">
+                    <h4>ROM推荐</h4>
+                    <p>适配Note8 Pro的ROM</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-8-2')">
+                    <h4>卡刷教程</h4>
+                    <p>TWRP刷入第三方ROM</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面8-1：ROM推荐 -->
+    <div id="level3-8-1" class="page">
+        <div class="section">
+            <h3>适配红米Note 8 Pro的第三方ROM</h3>
+            <div class="detail-content">
+                <h4>1. LineageOS 20</h4>
+                <p>类原生安卓系统，简洁流畅，无预装广告，适合喜欢纯净系统的用户。</p>
+                <h4>2. Pixel Experience</h4>
+                <p>高仿谷歌Pixel手机系统，自带谷歌服务，支持Pixel专属功能，体验原汁原味的安卓。</p>
+                <h4>3. MIUI 波兰版</h4>
+                <p>海外版MIUI系统，去除国内版的广告和冗余功能，保留MIUI的特色，流畅度更高。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-8')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面8-2：卡刷教程 -->
+    <div id="level3-8-2" class="page">
+        <div class="section">
+            <h3>TWRP卡刷第三方ROM</h3>
+            <div class="detail-content">
+                <h4>操作步骤</h4>
+                <p>1. 下载第三方ROM包，复制到手机SD卡根目录；<br>
+                2. 手机关机，按住电源键+音量上键进入TWRP Recovery；<br>
+                3. 选择“清除”，勾选data、cache、dalvik分区，点击“滑动清除”；<br>
+                4. 选择“安装”，找到ROM包，滑动确认刷入；<br>
+                5. 刷入完成后，选择“重启系统”，首次开机需等待5-10分钟。</p>
+                <h4>注意事项</h4>
+                <p>刷入第三方ROM前需备份重要数据，部分ROM需要刷入谷歌服务包，可根据需求选择。</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-8')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 二级页面9：资源分享 -->
+    <div id="level2-9" class="page">
+        <div class="section">
+            <h3>资源分享</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-9-1')">
+                    <h4>无心下载站</h4>
+                    <p>刷机资源下载</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-9-2')">
+                    <h4>萤火虫资源站</h4>
+                    <p>刷机工具与固件</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 三级页面9-1：无心下载站 -->
+    <div id="level3-9-1" class="page">
+        <div class="section">
+            <h3>无心下载站</h3>
+            <div class="detail-content">
+                <h4>下载链接</h4>
+                <p>以下是无心下载站的常用链接，点击即可访问：</p>
+                <a href="https://sbfdzx.top" target="_blank">无心下载站主站</a>
+                <a href="https://www.123pan.com/s/r5sDVv-aDApH.html" target="_blank">无心下载站备用链接</a>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-9')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 三级页面9-2：萤火虫资源站 -->
+    <div id="level3-9-2" class="page">
+        <div class="section">
+            <h3>萤火虫资源站</h3>
+            <div class="detail-content">
+                <h4>下载链接</h4>
+                <p>萤火虫资源站链接，点击即可访问：</p>
+                <a href="https://www.123pan.com/s/3mrrVv-PcxJv" target="_blank">萤火虫资源站</a>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-9')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 新增二级页面10：联系方式 -->
+    <div id="level2-10" class="page">
+        <div class="section">
+            <h3>联系方式</h3>
+            <div class="block-container">
+                <div class="block" onclick="switchPage('level3-10-1')">
+                    <h4>微信</h4>
+                    <p>扫码或搜索添加</p>
+                </div>
+                <div class="block" onclick="switchPage('level3-10-2')">
+                    <h4>QQ</h4>
+                    <p>加好友交流刷机</p>
+                </div>
+            </div>
+            <div class="back-btn" onclick="switchPage('index')">返回首页</div>
+        </div>
+    </div>
+
+    <!-- 新增三级页面10-1：微信 -->
+    <div id="level3-10-1" class="page">
+        <div class="section">
+            <h3>微信联系方式</h3>
+            <div class="detail-content">
+                <h4>微信号</h4>
+                <p>wyp20130324</p>
+                <h4>添加说明</h4>
+                <p>添加时请备注“刷机交流”，方便通过好友申请~</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-10')">返回上一级</div>
+        </div>
+    </div>
+
+    <!-- 新增三级页面10-2：QQ -->
+    <div id="level3-10-2" class="page">
+        <div class="section">
+            <h3>QQ联系方式</h3>
+            <div class="detail-content">
+                <h4>QQ号</h4>
+                <p>2389547812</p>
+                <h4>添加说明</h4>
+                <p>添加时请备注“刷机交流”，方便通过好友申请~</p>
+            </div>
+            <div class="back-btn" onclick="switchPage('level2-10')">返回上一级</div>
+        </div>
+    </div>
+
+    <script>
+        const bannerText = document.getElementById('bannerMainText');
+        let lastScrollTop = 0;
+
+        // 初始动画
+        window.onload = function() {
+            triggerBannerAnimation();
+        };
+
+        // 滚动监听：上滑时重置动画
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            // 上滑且回到banner区域时触发动画
+            if (scrollTop < lastScrollTop && scrollTop < 100) {
+                bannerText.classList.remove('show');
+                setTimeout(triggerBannerAnimation, 300);
+            }
+            lastScrollTop = scrollTop;
+        });
+
+        // 触发banner文字动画
+        function triggerBannerAnimation() {
+            bannerText.classList.remove('show');
+            setTimeout(() => {
+                bannerText.classList.add('show');
+            }, 300);
+        }
+
+        // 页面切换函数（触发淡入上滑动画）
+        function switchPage(pageId) {
+            const allPages = document.querySelectorAll('.page');
+            allPages.forEach(page => {
+                page.classList.remove('active');
+            });
+            setTimeout(() => {
+                const targetPage = document.getElementById(pageId);
+                targetPage.classList.add('active');
+            }, 60);
+        }
+    </script>
+</body>
+</html>
